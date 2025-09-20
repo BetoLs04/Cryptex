@@ -2,142 +2,286 @@ import {
   createAuthenticatedClient,
   OpenPaymentsClientError,
   isPendingGrant,
+  isFinalizedGrant
 } from "@interledger/open-payments";
 import { randomUUID } from "crypto";
 import readline from "readline/promises";
-import fetch from "node-fetch";
 
 // TUS CREDENCIALES
 const WALLET_ADDRESS = "https://ilp.interledger-test.dev/user";
+const RECEIVING_WALLET = "https://ilp.interledger-test.dev/gouber";
 const PRIVATE_KEY_PATH = "backend/private.key";
 const KEY_ID = "0841b666-c298-4c5b-aab0-19eda3d697e6";
-const RECEIVING_WALLET = "https://ilp.interledger-test.dev/gouber";
+const MONTO_A_ENVIAR = "1000";
 
-// Función con timeout mejorada
+// Timeout para evitar esperas eternas
+const TIMEOUT_MS = 15000;
+
 function withTimeout(promise, ms, errorMessage = "Timeout") {
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error(errorMessage)), ms)
-  );
-  
-  return Promise.race([promise, timeoutPromise]);
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(errorMessage)), ms)
+    )
+  ]);
 }
 
-// Función para logging consistente
-function logStep(step, message) {
-  console.log(`\n${step} ${message}`);
-}
-
-async function main() {
+(async () => {
   try {
-    logStep("🔑", "Creando cliente autenticado...");
-    const client = await createAuthenticatedClient({
-      walletAddressUrl: WALLET_ADDRESS,
-      privateKey: PRIVATE_KEY_PATH,
-      keyId: KEY_ID,
-    });
+    console.log("🚀 INICIANDO TRANSFERENCIA OPEN PAYMENTS");
+    console.log("=".repeat(50));
 
-    logStep("📭", "Obteniendo wallet address...");
+    // ==================== PASO 1 ====================
+    console.log("\n1️⃣  PASO 1: Inicializando cliente de Open Payments");
+    const client = await withTimeout(
+      createAuthenticatedClient({
+        walletAddressUrl: WALLET_ADDRESS,
+        privateKey: PRIVATE_KEY_PATH,
+        keyId: KEY_ID,
+      }),
+      TIMEOUT_MS,
+      "Timeout creando cliente"
+    );
+    console.log("✅ Cliente inicializado correctamente");
+
+    // ==================== PASO 2 ====================
+    console.log("\n2️⃣  PASO 2: Obteniendo wallet address");
     const walletAddress = await withTimeout(
-      client.walletAddress.get({ url: WALLET_ADDRESS }),
-      10000,
+      client.walletAddress.get({
+        url: WALLET_ADDRESS,
+      }),
+      TIMEOUT_MS,
       "Timeout obteniendo wallet address"
     );
+    console.log("✅ Wallet address obtenida:", walletAddress.id);
+    console.log("   Auth Server:", walletAddress.authServer);
+    console.log("   Resource Server:", walletAddress.resourceServer);
 
-    logStep("✅", `Wallet address obtenida: ${walletAddress.id}`);
-    logStep("🌐", `Auth Server: ${walletAddress.authServer}`);
-
-    // 1. Test de conectividad al endpoint de grants
-    logStep("🔍", "Probando endpoint de grants...");
-    await testGrantEndpoint(walletAddress.authServer);
-
-    // 2. Intentar obtener grant
-    logStep("🎫", "Solicitando grant para incoming payment...");
-    await requestGrant(client, walletAddress.authServer);
-
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-// Función separada para testear endpoint
-async function testGrantEndpoint(authServer) {
-  try {
-    const testResponse = await fetch(`${authServer}/grant`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        access_token: {
-          access: [{ type: "incoming-payment", actions: ["create", "read"] }]
-        }
-      }),
-      timeout: 15000
-    });
-    
-    console.log(`✅ Endpoint /grant responde. Status: ${testResponse.status}`);
-    
-  } catch (testError) {
-    console.error("❌ Error probando endpoint /grant:", testError.message);
-    // No re-lanzamos el error, es solo un test
-  }
-}
-
-// Función separada para solicitar grant
-async function requestGrant(client, authServer) {
-  try {
-    const incomingGrant = await withTimeout(
+    // ==================== PASO 3 ====================
+    console.log("\n3️⃣  PASO 3: Solicitando grant para incoming payment");
+    const incomingPaymentGrant = await withTimeout(
       client.grant.request(
-        { url: authServer },
+        {
+          url: walletAddress.authServer,
+        },
         {
           access_token: {
-            access: [{
-              type: "incoming-payment",
-              actions: ["list", "read", "read-all", "complete", "create"],
-            }],
+            access: [
+              {
+                type: "incoming-payment",
+                actions: ["list", "read", "read-all", "complete", "create"],
+              },
+            ],
           },
         }
       ),
-      30000,
-      "Timeout: El servidor no respondió en 30 segundos"
+      TIMEOUT_MS,
+      "Timeout solicitando grant para incoming payment"
+    );
+    console.log("✅ Grant para incoming payment obtenido");
+    const INCOMING_PAYMENT_ACCESS_TOKEN = incomingPaymentGrant.access_token.value;
+
+    // ==================== PASO 4 ====================
+    console.log("\n4️⃣  PASO 4: Creando incoming payment");
+    const receivingWallet = await withTimeout(
+      client.walletAddress.get({
+        url: RECEIVING_WALLET,
+      }),
+      TIMEOUT_MS,
+      "Timeout obteniendo wallet receptor"
     );
 
-    logStep("✅", "¡GRANT OBTENIDO EXITOSAMENTE!");
-    console.log(JSON.stringify({
-      access_token: !!incomingGrant.access_token,
-      interact: !!incomingGrant.interact,
-      continue: !!incomingGrant.continue
-    }, null, 2));
+    const incomingPayment = await withTimeout(
+      client.incomingPayment.create(
+        {
+          url: receivingWallet.resourceServer,
+          accessToken: INCOMING_PAYMENT_ACCESS_TOKEN,
+        },
+        {
+          walletAddress: receivingWallet.id,
+          incomingAmount: {
+            value: MONTO_A_ENVIAR,
+            assetCode: receivingWallet.assetCode,
+            assetScale: receivingWallet.assetScale,
+          },
+          expiresAt: new Date(Date.now() + 60_000 * 10).toISOString(),
+        }
+      ),
+      TIMEOUT_MS,
+      "Timeout creando incoming payment"
+    );
+    console.log("✅ Incoming payment creado");
+    console.log("   ID:", incomingPayment.id);
+    console.log("   Monto a recibir:", MONTO_A_ENVIAR, receivingWallet.assetCode);
+    const INCOMING_PAYMENT_URL = incomingPayment.id;
 
-    return incomingGrant;
+    // ==================== PASO 5 ====================
+    console.log("\n5️⃣  PASO 5: Solicitando grant para quote");
+    const quoteGrant = await withTimeout(
+      client.grant.request(
+        {
+          url: walletAddress.authServer,
+        },
+        {
+          access_token: {
+            access: [
+              {
+                type: "quote",
+                actions: ["create", "read", "read-all"],
+              },
+            ],
+          },
+        }
+      ),
+      TIMEOUT_MS,
+      "Timeout solicitando grant para quote"
+    );
+    console.log("✅ Grant para quote obtenido");
+    const QUOTE_ACCESS_TOKEN = quoteGrant.access_token.value;
 
-  } catch (grantError) {
-    logStep("❌", "Error en la solicitud del grant:");
-    console.error("Mensaje:", grantError.message);
+    // ==================== PASO 6 ====================
+    console.log("\n6️⃣  PASO 6: Creando quote");
+    const quote = await withTimeout(
+      client.quote.create(
+        {
+          url: walletAddress.resourceServer,
+          accessToken: QUOTE_ACCESS_TOKEN,
+        },
+        {
+          method: "ilp",
+          walletAddress: walletAddress.id,
+          receiver: INCOMING_PAYMENT_URL,
+        }
+      ),
+      TIMEOUT_MS,
+      "Timeout creando quote"
+    );
+    console.log("✅ Quote creado");
+    console.log("   ID:", quote.id);
+    console.log("   Debit Amount:", quote.debitAmount.value, quote.debitAmount.assetCode);
+    console.log("   Receive Amount:", quote.receiveAmount.value, quote.receiveAmount.assetCode);
+    const QUOTE_URL = quote.id;
+
+    // ==================== PASO 7 ====================
+    console.log("\n7️⃣  PASO 7: Solicitando grant interactivo para outgoing payment");
+    const NONCE = randomUUID();
     
-    if (grantError.response) {
-      console.error("Status:", grantError.response.status);
-      console.error("URL:", grantError.response.config?.url);
+    const outgoingPaymentGrant = await withTimeout(
+      client.grant.request(
+        {
+          url: walletAddress.authServer,
+        },
+        {
+          access_token: {
+            access: [
+              {
+                identifier: walletAddress.id,
+                type: "outgoing-payment",
+                actions: ["list", "list-all", "read", "read-all", "create"],
+                limits: {
+                  debitAmount: {
+                    assetCode: quote.debitAmount.assetCode,
+                    assetScale: quote.debitAmount.assetScale,
+                    value: quote.debitAmount.value,
+                  },
+                },
+              },
+            ],
+          },
+          interact: {
+            start: ["redirect"],
+            finish: {
+              method: "redirect",
+              uri: "http://localhost:3344",
+              nonce: NONCE,
+            },
+          },
+        }
+      ),
+      TIMEOUT_MS,
+      "Timeout solicitando grant interactivo"
+    );
+
+    if (!isPendingGrant(outgoingPaymentGrant)) {
+      throw new Error("Expected interactive grant");
+    }
+    console.log("✅ Grant interactivo obtenido");
+    console.log("\n🔗 URL para autorización:", outgoingPaymentGrant.interact.redirect);
+    console.log("\n⚠️  Por favor visita esta URL en tu navegador,");
+    console.log("   autoriza la transacción y luego regresa aquí");
+
+    // Esperar interacción del usuario
+    await readline
+      .createInterface({ input: process.stdin, output: process.stdout })
+      .question("🎯 Presiona Enter después de autorizar...");
+
+    // ==================== PASO 8 ====================
+    console.log("\n8️⃣  PASO 8: Continuando grant después de autorización");
+    // En un caso real, obtendrías el interact_ref de la URL de callback
+    const interactRef = "authorized_manually"; // Esto normalmente vendría del callback
+    
+    const finalizedGrant = await withTimeout(
+      client.grant.continue(
+        {
+          accessToken: outgoingPaymentGrant.continue.access_token.value,
+          url: outgoingPaymentGrant.continue.uri,
+        },
+        {
+          interact_ref: interactRef,
+        }
+      ),
+      TIMEOUT_MS,
+      "Timeout continuando grant"
+    );
+
+    if (!isFinalizedGrant(finalizedGrant)) {
+      throw new Error("Grant no fue finalizado correctamente");
+    }
+    console.log("✅ Grant finalizado correctamente");
+    const OUTGOING_PAYMENT_ACCESS_TOKEN = finalizedGrant.access_token.value;
+
+    // ==================== PASO 9 ====================
+    console.log("\n9️⃣  PASO 9: Creando outgoing payment");
+    const outgoingPayment = await withTimeout(
+      client.outgoingPayment.create(
+        {
+          url: walletAddress.resourceServer,
+          accessToken: OUTGOING_PAYMENT_ACCESS_TOKEN,
+        },
+        {
+          walletAddress: walletAddress.id,
+          quoteId: QUOTE_URL,
+        }
+      ),
+      TIMEOUT_MS,
+      "Timeout creando outgoing payment"
+    );
+
+    // ==================== ÉXITO ====================
+    console.log("\n🎉 ¡¡¡TRANSFERENCIA COMPLETADA EXITOSAMENTE!!!");
+    console.log("=".repeat(55));
+    console.log("   📋 ID del pago:", outgoingPayment.id);
+    console.log("   💰 Monto enviado:", quote.debitAmount.value, quote.debitAmount.assetCode);
+    console.log("   📤 Desde:", walletAddress.id);
+    console.log("   📥 Hacia:", receivingWallet.id);
+    console.log("   ✅ Estado:", outgoingPayment.state);
+    console.log("   🕒 Fecha:", new Date().toLocaleString());
+    console.log("=".repeat(55));
+
+  } catch (error) {
+    console.error("\n❌ ERROR en el proceso:");
+    console.error("   📌 Mensaje:", error.message);
+    
+    if (error.response) {
+      console.error("   📊 Status HTTP:", error.response.status);
+      console.error("   🔗 URL:", error.response.config?.url);
     }
     
-    throw grantError; // Re-lanzamos para manejo superior
-  }
-}
-
-// Función centralizada para manejo de errores
-function handleError(error) {
-  logStep("💥", "Error general en el proceso:");
-  
-  if (error.response?.status === 401) {
-    console.log("🔐 ERROR DE AUTENTICACIÓN - Verifica:");
-    console.log("   • private.key path: backend/private.key");
-    console.log("   • keyId: 0841b666-c298-4c5b-aab0-19eda3d697e6");
-  } else if (error.message.includes("Timeout")) {
-    console.log("⏰ TIMEOUT - El servidor no responde:");
-    console.log("   • Servidores de Open Payments pueden estar caídos");
+    console.log("\n💡 Posibles soluciones:");
+    console.log("   • Los servidores pueden estar caídos");
     console.log("   • Reintenta en unas horas");
-  } else {
-    console.error("Error details:", error.message);
+    console.log("   • Verifica tus credenciales");
+  } finally {
+    process.exit();
   }
-}
-
-// Ejecutar la aplicación
-main().catch(handleError);
+})();
