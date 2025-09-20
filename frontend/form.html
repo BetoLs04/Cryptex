@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sistema Aguascalientes</title>
+  <link rel="stylesheet" href="stylesform.css" />
+ 
+</head>
+<body>
+
+  <!-- barra superior -->
+  <div class="topbar" aria-hidden="true"> </div>
+
+  <!-- contenedor central -->
+  <div class="wrapper">
+    <aside class="sidebar">
+      <!-- aquí puedes poner los botones del menú si quieres -->
+         <h3>¿Qué función desea realizar?</h3>
+    <br>
+     
+       <a href="menu.html"><button class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-bar-left" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M12.5 15a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 1 0v13a.5.5 0 0 1-.5.5M10 8a.5.5 0 0 1-.5.5H3.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L3.707 7.5H9.5a.5.5 0 0 1 .5.5"/>
+</svg>REGRESAR</button></a>
+      <br>
+ <button class="btn">CURP</button>
+       <br>
+      <button class="btn">CONSTANCIA DE INHABILITACIÓN</button>
+       <br>
+      <button class="btn">NÚMERO DE SEGURO SOCIAL</button>
+    </aside>
+
+    <!-- área principal: el container (formulario) debe ir dentro de content -->
+    <section class="content">
+      <div class="container">
+        <h1>Solicitud de Acta de Nacimiento</h1>
+        <p class="lead">Por favor, completa los datos obligatorios marcados con *.</p>
+
+        <form id="miFormulario" novalidate>
+          <!-- Nombre completo -->
+          <div class="full">
+            <label for="nombre">Nombre completo <span class="required">*</span></label>
+            <input id="nombre" name="nombre" type="text" placeholder="Nombre(s) Apellidos" required>
+          </div>
+
+          <!-- CURP -->
+          <div class="full">
+            <label for="curp">CURP <span class="required">*</span></label>
+            <input id="curp" name="curp" type="text" placeholder="PEHJ800101HDFABC02" maxlength="18" required>
+            <small class="help-text">
+              ¿No conoces tu CURP?
+              <a href="https://www.gob.mx/curp/" target="_blank" rel="noopener">Consúltala aquí</a>
+            </small>
+          </div>
+
+          <!-- Fecha de nacimiento -->
+          <div>
+            <label for="fechaNacimiento">Fecha de nacimiento <span class="required">*</span></label>
+            <input id="fechaNacimiento" name="fechaNacimiento" type="date" required>
+          </div>
+
+          <!-- Lugar de nacimiento -->
+          <div>
+            <label for="lugarNacimiento">Lugar de nacimiento <span class="required">*</span></label>
+            <input id="lugarNacimiento" name="lugarNacimiento" type="text" placeholder="Ciudad, Estado" required>
+          </div>
+
+          <div class="actions">
+            <button type="reset" class="secondary">Limpiar</button>
+            <button type="submit">Enviar solicitud</button>
+          </div>
+        </form>
+        <div id="result" class="result"></div>
+
+
+        <div id="result" class="result"></div>
+      </div>
+
+      <div class="copyright">@CRYPTEX</div>
+    </section>
+  </div>
+
+  <!-- barra inferior -->
+  <div class="bottombar" aria-hidden="true"></div>
+
+  <!-- script al final (si existe) -->
+  
+
+
+
+  <script src="scriptform.js"></script>
+  <script
+  type="text/javascript"
+  src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/9.2.0/mdb.umd.min.js"
+></script>
+
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Confirmación de Solicitud</title>
+  <link rel="stylesheet" href="pdf.css" />
+  <link rel="icon" href="data:," />
+</head>
+<body>
+
+  <!-- barra superior -->
+  <div class="topbar" aria-hidden="true">
+    <a href="menu.html">
+    </a>
+  </div>
+
+  <!-- contenedor central -->
+  <div class="wrapper">
+    <aside class="sidebar">
+      <!-- puedes agregar botones aquí si lo deseas -->
+        <h3>¿Qué función desea realizar?</h3>
+    <br>
+     
+       <a href="menu.html"><button class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-bar-left" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M12.5 15a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 1 0v13a.5.5 0 0 1-.5.5M10 8a.5.5 0 0 1-.5.5H3.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L3.707 7.5H9.5a.5.5 0 0 1 .5.5"/>
+</svg>REGRESAR</button></a>
+      <br>
+ <button class="btn">CURP</button>
+       <br>
+      <button class="btn">CONSTANCIA DE INHABILITACIÓN</button>
+       <br>
+      <button class="btn">NÚMERO DE SEGURO SOCIAL</button>
+    </aside>
+
+    <section class="content">
+      <div class="container">
+        <h1>Tu solicitud ha sido completada</h1>
+        <p class="lead">Haz clic en el botón para descargar tu comprobante.</p>
+        <button id="descargarPDF">DESCARGAR PDF</button>
+      </div>
+      <div class="copyright">@CRYPTEX</div>
+    </section>
+  </div>
+
+  <!-- barra inferior -->
+  <div class="bottombar" aria-hidden="true"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="pdf.js"></script>
+</body>
+</html>

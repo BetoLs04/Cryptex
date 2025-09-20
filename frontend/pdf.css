@@ -1,0 +1,194 @@
+:root {
+  --bar: #274955;
+  --wrapper-bg: #ffffff;
+  --sidebar-bg: #7dafb0;
+  --btn-bg: #2b5160;
+  --btn-text: #ffffff;
+  --main-text: #0d2130;
+
+  --bg: #f4f4f4;
+  --card: #ffffff;
+  --accent: #2463eb;
+  --muted: #6b7280;
+}
+
+/* Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html, body {
+  height: 100%;
+}
+body {
+  font-family: "Segoe UI", sans-serif;
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Barras superior/inferior */
+.topbar, .bottombar {
+  height: 48px;
+  width: 100%;
+  background: var(--bar);
+  flex-shrink: 0;
+}
+
+/* Botón de regreso */
+.btnback {
+  background: none;
+  color: white;
+  border: none;
+  font-weight: bold;
+  padding: 10px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+.btnback svg {
+  vertical-align: middle;
+}
+
+/* Layout principal */
+.wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  background: var(--sidebar-bg);
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Área principal */
+.content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 36px 48px;
+  position: relative;
+  color: var(--main-text);
+}
+
+/* Tarjeta central */
+.container {
+  text-align: center;
+  background: var(--card);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Título */
+h1 {
+  font-size: 24px;
+  margin-bottom: 12px;
+  color: #274955;
+}
+.lead {
+  margin-bottom: 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Botón de descarga */
+button {
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+button:hover {
+  background-color: #1f3e4a;
+}
+
+/* Copyright */
+.content .copyright {
+  position: absolute;
+  right: 18px;
+  bottom: 12px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.45);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .sidebar {
+    width: 220px;
+    padding: 20px;
+  }
+  .container {
+    max-width: 520px;
+  }
+}
+@media (max-width: 640px) {
+  .wrapper {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: center;
+    padding: 12px;
+    flex-wrap: wrap;
+  }
+  .content {
+    padding: 18px;
+    align-items: flex-start;
+  }
+  .container {
+    width: 100%;
+  }
+}
+
+/* BOTONES */
+.btn {
+  width: 84%;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 28px;
+  padding: 12px 18px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  cursor: pointer;
+  transition: all .22s ease;
+  text-align: center;
+  font-size: 16px;
+  text-decoration: none; /* ← evita subrayado en <a> */
+  display: inline-block;  /* ← asegura que <a> se comporte como botón */
+}
+.btn:hover {
+  background: #fff;
+  color: var(--btn-bg);
+  border: 2px solid var(--btn-bg);
+  transform: translateY(-3px); /* efecto de levantarse */
+  text-decoration: none;
+}
+
+.sidebar h3{
+  color: #ffffff;
+  font-size: 18px;
+  text-align:center;
+  margin-bottom: 6px;
+  line-height:1.2;
+} 
